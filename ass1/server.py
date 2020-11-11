@@ -30,6 +30,8 @@ def conncetToFatherServer(filename, unknownAddr, parentip, parentport, address_d
     soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     soc.sendto(unknownAddr.encode(), (parentip, int(parentport)))
     data, addr = soc.recvfrom(1024)
+    if not data:
+        return "not found"
     if type(data) is list:
         tmp_list = []
         tmp_list.append(data[0])
@@ -40,6 +42,8 @@ def conncetToFatherServer(filename, unknownAddr, parentip, parentport, address_d
         timestamp = datetime.timestamp(now)
         tmp_list.append(timestamp)
         address_dict[tmp_list[0]] = tmp_list
+        writeDataToFile(filename, address_dict)
+
     soc.close()
 def writeDataToFile(filename, address_dict):# write date to file 'ips.txt'
     fp = open(filename, 'w')
@@ -70,7 +74,7 @@ def FindAddressInDB(address_dict, input_address):
                     return address_dict[key]
                 else:
                     deleteRecordFromFileDB(key, address_dict)
-    return "not found"
+    return empty_list
 
 def deleteRecordFromFileDB(linetodelete, address_dict):
     del address_dict[linetodelete]
@@ -88,7 +92,7 @@ def main():
     parentport = sys.argv[3]
     filepath = sys.argv[4]
     readDataFromFile(filepath, address_dict)
-
+    my_list = []
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.bind(('', int(myport)))
 
@@ -96,6 +100,18 @@ def main():
         print("waiting for client....")
         data, addr = s.recvfrom(1024)
         print("connection established, client's connection details:" + addr)
+        print("client is searching for the ip of: %s, no problemo, searching....", data.decode())
+        input_query = data.decode()
+        my_list = FindAddressInDB(address_dict, input_query, isFatherrelevant)
+        if not my_list:
+            conncetToFatherServer(filepath, input_query, parentip, parentport, address_dict)
+            my_list = FindAddressInDB(address_dict, input_query, isFatherrelevant)
+        if not my_list:
+            s.sendto(b'not found', addr)
+        else:
+            res = my_list[1]
+            s.sendto(res.encode(), addr)
+
 
         #print(str(data), addr)
         #s.sendto(data.upper(), addr)
