@@ -8,12 +8,12 @@ def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     while True:
         txt = input("Type your web address and get its ip address: ")
-        s.sendto(txt.encode(), (serverIP, 1234))
+        s.sendto(txt.encode(), (serverIP, int(serverPort)))
         data, addr = s.recvfrom(1024)
         if type(data) is list:
             print(str(data[1]))
         else:
-            print "not found"
+            print("not found")
     # s.close()
 
 
