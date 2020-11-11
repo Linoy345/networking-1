@@ -87,7 +87,7 @@ def main():
     readDataFromFile(filepath, address_dict)
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.bind(('', 1234))
+    s.bind(('', int(myport)))
 
     while True:
         print("waiting for client....")
