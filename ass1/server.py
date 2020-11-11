@@ -1,5 +1,6 @@
 import socket
 from datetime import datetime
+import sys
 
 def readDataFromFile(filename, address_dict):  # first start the program by
     # reading contents from ips.txt
@@ -25,8 +26,21 @@ def readDataFromFile(filename, address_dict):  # first start the program by
         cnt += 1
     fp.close()
 
-
-# todo- add connection to father server
+def conncetToFatherServer(filename, unknownAddr, parentip, parentport, address_dict):
+    soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    soc.sendto(unknownAddr.encode(), (parentip, int(parentport)))
+    data, addr = soc.recvfrom(1024)
+    if type(data) is list:
+        tmp_list = []
+        tmp_list.append(data[0])
+        tmp_list.append(data[1])
+        tmp_list.append(data[2])
+        tmp_list.append('1')
+        now = datetime.now()
+        timestamp = datetime.timestamp(now)
+        tmp_list.append(timestamp)
+        address_dict[tmp_list[0]] = tmp_list
+    soc.close()
 def writeDataToFile(filename, address_dict):# write date to file 'ips.txt'
     fp = open(filename, 'w')
     fp.truncate()
@@ -41,23 +55,37 @@ def writeDataToFile(filename, address_dict):# write date to file 'ips.txt'
         fp.write('%s%s\n' % (my_string, j))  # write the value of the current key to the ips.txt file
     fp.close()
 
+def FindAddressInDB(address_dict, input_address):
+    empty_list = []
+    for key in address_dict:
+        if key == input_address:
+            empty_list = address_dict[key]
+            if(empty_list[3] == "1"):
+                now = datetime.now()
+                timestamp = datetime.timestamp(now)
+                t1 = datetime.strptime(empty_list[4], "%b %d %H:%M:%S %Y")
+                t2 = datetime.strptime(timestamp, "%b %d %H:%M:%S %Y")
+                difference = t1 - t2
+                if(difference.seconds <= int(empty_list[2])):
+                    return address_dict[key]
+                else:
+                    deleteRecordFromFileDB(key, address_dict)
+    return "not found"
 
-def deleteRecordFromFile(filename, linetodelete, address_dict):
-    with open(filename, "r") as f:
-        lines = f.readlines()
-    with open(filename, "w") as f:
-        for line in lines:
-            if line.strip("\n") != linetodelete:
-                f.write(line)
+def deleteRecordFromFileDB(linetodelete, address_dict):
+    del address_dict[linetodelete]
 
 
 def main():
     address_dict = dict()  # initialize empty dictionary
     # to hold the addresses , ip and TTl of sites. key is the address and value is
     # list of the current line separated by comma
-    filepath = 'ips.txt'
+    myport = sys.argv[1]
+    parentip = sys.argv[2]
+    parentport = sys.argv[3]
+    filepath = sys.argv[4]
     readDataFromFile(filepath, address_dict)
-    writeDataToFile(filepath, address_dict)
+
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.bind(('', 1234))
 
