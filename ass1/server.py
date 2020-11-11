@@ -77,11 +77,14 @@ def deleteRecordFromFileDB(linetodelete, address_dict):
 
 
 def main():
+    isFatherrelevant = 0
     address_dict = dict()  # initialize empty dictionary
     # to hold the addresses , ip and TTl of sites. key is the address and value is
     # list of the current line separated by comma
     myport = sys.argv[1]
     parentip = sys.argv[2]
+    if(int(parentip) != -1):
+        isFatherrelevant = 1
     parentport = sys.argv[3]
     filepath = sys.argv[4]
     readDataFromFile(filepath, address_dict)
@@ -94,8 +97,8 @@ def main():
         data, addr = s.recvfrom(1024)
         print("connection established, client's connection details:" + addr)
 
-        print(str(data), addr)
-        s.sendto(data.upper(), addr)
+        #print(str(data), addr)
+        #s.sendto(data.upper(), addr)
 
 
 main()
