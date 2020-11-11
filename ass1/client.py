@@ -8,9 +8,9 @@ def main():
     print("trying to cennect to server...")
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     while True:
+        s.sendto(txt.encode(), (serverIP, int(serverPort)))
         print("connection succesful")
         txt = input("Type your web address and get its ip address: ")
-        s.sendto(txt.encode(), (serverIP, int(serverPort)))
         data, addr = s.recvfrom(1024)
         if type(data) is list:
             print(str(data[1]))
