@@ -1,5 +1,6 @@
 import socket
 import sys
+import json
 
 
 def main():
@@ -13,10 +14,11 @@ def main():
         txt = input()
         s.sendto(txt.encode(), (serverIP, int(serverPort)))
         data, addr = s.recvfrom(1024)
-        if type(data) is list:
-            print(data[1])
-        else:
+        deserialized = json.loads(data.decode())
+        if not deserialized:
             print("not found")
+        else:
+            print(deserialized[1])
     # s.close()
 
 
