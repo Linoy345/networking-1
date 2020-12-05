@@ -31,7 +31,7 @@ def check_if_file_exist(conn, path, connection_status):
 
         if connection_status == 'close' :
             #need to close the connection after sending the inforamtion and take care of new connection
-            #conn.close() ????
+            #conn.close()
             print("???")
         else : #keep alive
             #conection stay open and need to read the next req
@@ -75,18 +75,22 @@ def main():
     myport = sys.argv[1]  # this variable will hold the port that the server will listen to
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(('', int(myport)))
-    s.listen(1)
+    s.listen(5)
 
     while True:  # as long as the list is not empty, we wont close the socket
         conn, addr = s.accept()
+        #one sec
         chr = conn.recv(1024)  # each time we check if the next char from client is \r\n\r\n
+        print(chr.decode())
         req = chr.decode().split(sep="\r\n\r\n") #save all the requests
         dict = parse_information(req) #the key is the adress from get and the value is the connection status
-        print(dict)
-        #        #rediresct
-
         for i in dict.keys():
-            check_if_file_exist(conn, i, dict.get(i))
+            if i == '' : #empty message from client, need to close and get another client
+                print("???")
+            if i == '/redirect':
+                redirection(conn)
+            else :
+                check_if_file_exist(conn, i, dict.get(i))
 
 
 
