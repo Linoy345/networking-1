@@ -48,8 +48,8 @@ def check_if_file_exist(conn, path, connection_status):
         f = open(path, 'rb')
         file_content = f.read()
         length = os.path.getsize(path)  # get size of the data in file
-        conn.send((HTTP_OK_STR + CONNECTION_STR + connection_status + '\r\n' + CONTENT_LEN_STR + str(
-                    os.path.getsize(path)) + SUFFIX).encode())
+        conn.send((HTTP_OK_STR + CONNECTION_STR + connection_status + '\r\n' + CONTENT_LEN_STR +
+                   str(length) + SUFFIX).encode())
         read_send_bytes(conn, path)
 
         return connection_status
@@ -65,7 +65,7 @@ def redirection(conn):
 def parse_information(req):
     flag = 0
     list_gets = []  # all the get req
-    list_cons = []  # all the status conection
+    list_cons = []  # all the status connection
     d = {}
     for i in req:
         if 'GET ' in i:
@@ -117,9 +117,10 @@ def main():
                 conn.close()
                 flag = 0
         except socket.timeout:
-            print("No Response")
             if (conn.fileno() != -1):
                 conn.close()
-
+        except :
+            if (conn.fileno() != -1):
+                conn.close()
 
 main()
