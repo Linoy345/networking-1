@@ -3,6 +3,19 @@ import sys
 import os
 
 
+# ________________________CONSTS_______________________#
+
+
+HTTP_OK_STR = "HTTP/1.1 200 OK\r\n"
+HTTP_MOVED_STR = "HTTP/1.1 301 Moved Permanently\r\n"
+HTTP_NOT_FOUND_STR = "HTTP/1.1 404 Not Found\r\n"
+CONNECTION_STR = "Connection: "
+CONNECTION_CLOSE_STR = "Connection: close"
+CONTENT_LEN_STR = "Content-Length: "
+LOCATION_RESULT_STR = "Location: /result.html\r\n\r\n"
+BUFFER_SIZE = 1024
+SUFFIX = "\r\n\r\n"
+
 def proccess_client_request(conn,
                             data):  # this is the main function - from here we start to proccess the message from client
     status = "open"
@@ -17,37 +30,35 @@ def proccess_client_request(conn,
             status = check_if_file_exist(conn, i, dictt.get(i))
     return status
 
+def read_send_bytes(conn, path):
+    with open(path, "rb") as f:
+        content = f.read(BUFFER_SIZE)
+        while content:
+            conn.send(content)
+            content = f.read(BUFFER_SIZE)
 
 def check_if_file_exist(conn, path, connection_status):
     files = "files/"
     path = files + path
     if (os.path.isfile(path) is False):  # send FileNotFound
-        conn.send(b'HTTP/1.1 404 Not Found \r\n')
-        conn.send(b'Connection: close \r\n')
-        conn.send(b'\r\n')
-        return connection_status.encode()
+        conn.send((HTTP_NOT_FOUND_STR + CONNECTION_CLOSE_STR + SUFFIX).encode())
+        return "close"
 
     else:
         f = open(path, 'rb')
         file_content = f.read()
         length = os.path.getsize(path)  # get size of the data in file
-        conn.send(b'HTTP/1.1 200 OK \r\n'+b'Connection: ' + connection_status.encode() + b'\r\n'+
-                  b'Content-Length: ' + str(length).encode() + b'\r\n\r\n')
-        # conn.send(b'Connection: ' + connection_status.encode() + b'\r\n')
-        # conn.send(b'Content-Length: ' + str(length).encode() + b'\r\n')
-        # conn.send(b'\r\n')  # empty line
-        conn.send(file_content + b'\r\n')
-        # conn.send(b'\r\n')
-        return connection_status.encode()
+        conn.send((HTTP_OK_STR + CONNECTION_STR + connection_status + '\r\n' + CONTENT_LEN_STR + str(
+                    os.path.getsize(path)) + SUFFIX).encode())
+        read_send_bytes(conn, path)
+
+        return connection_status
 
 
 def redirection(conn):
-    conn.send(b'HTTP/1.1 301 Moved Permanently')
-    conn.send(b'\r\n')
-    conn.send(b'Connection: close')
-    conn.send(b'\r\n')
-    conn.send(b'Location:/result.html')
-    conn.send(b'\r\n\r\n')
+    conn.send((HTTP_MOVED_STR + CONNECTION_CLOSE_STR + '\r\n' + LOCATION_RESULT_STR + SUFFIX).encode())
+    path = "files/result.html"
+    read_send_bytes(conn, path)
     return "close"
 
 
@@ -96,6 +107,7 @@ def main():
                 else:
                     data = data + chr
                     if (len(data) >= 4 and data[-4:] == '\r\n\r\n'):
+                        print(data)
                         status = proccess_client_request(conn, data)
                         data = ""
                         if (status == "close"):
