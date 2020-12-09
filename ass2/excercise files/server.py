@@ -31,12 +31,13 @@ def check_if_file_exist(conn, path, connection_status):
         f = open(path, 'rb')
         file_content = f.read()
         length = os.path.getsize(path)  # get size of the data in file
-        conn.send(b'HTTP/1.1 200 OK \r\n')
-        conn.send(b'Connection: ' + connection_status.encode() + b'\r\n')
-        conn.send(b'Content-Length: ' + str(length).encode() + b'\r\n')
-        conn.send(b'\r\n')  # empty line
+        conn.send(b'HTTP/1.1 200 OK \r\n'+b'Connection: ' + connection_status.encode() + b'\r\n'+
+                  b'Content-Length: ' + str(length).encode() + b'\r\n\r\n')
+        # conn.send(b'Connection: ' + connection_status.encode() + b'\r\n')
+        # conn.send(b'Content-Length: ' + str(length).encode() + b'\r\n')
+        # conn.send(b'\r\n')  # empty line
         conn.send(file_content + b'\r\n')
-        conn.send(b'\r\n')
+        # conn.send(b'\r\n')
         return connection_status.encode()
 
 
