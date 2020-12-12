@@ -23,9 +23,9 @@ def proccess_client_request(conn,
     dictt = parse_information(req)  # the key is the adress from get and the value is the connection status
     for i in dictt.keys():
         if i == '':  # empty message from client, need to close and get another client
-            status = "close"
+            status = 404
         if i == '/redirect':
-            status = redirection(conn)
+            status = 404
         else:
             status = check_if_file_exist(conn, i, dictt.get(i))
     return status
@@ -42,24 +42,24 @@ def check_if_file_exist(conn, path, connection_status):
     path = files + path
     if (os.path.isfile(path) is False):  # send FileNotFound
         conn.send((HTTP_NOT_FOUND_STR + CONNECTION_CLOSE_STR + SUFFIX).encode())
-        return "close"
+        return 404
 
     else:
-        f = open(path, 'rb')
-        file_content = f.read()
         length = os.path.getsize(path)  # get size of the data in file
         conn.send((HTTP_OK_STR + CONNECTION_STR + connection_status + '\r\n' + CONTENT_LEN_STR +
                    str(length) + SUFFIX).encode())
         read_send_bytes(conn, path)
-
-        return connection_status
+        if (connection_status == "close"):
+            return 404
+        else:
+            return 200
 
 
 def redirection(conn):
     conn.send((HTTP_MOVED_STR + CONNECTION_CLOSE_STR + '\r\n' + LOCATION_RESULT_STR + SUFFIX).encode())
     path = "files/result.html"
     read_send_bytes(conn, path)
-    return "close"
+    return 404
 
 
 def parse_information(req):
@@ -97,25 +97,25 @@ def main():
 
     while True:
         conn, addr = s.accept()
+        status = 200
+        data = ""
         try:
             conn.settimeout(1)
-            flag = 0
-            while chr:  # flag will be turned on when we get '\r\n\r\n
+            while chr and conn.fileno() != -1:  # flag will be turned on when we get '\r\n\r\n
                 chr = conn.recv(1).decode()  # each time we check if the next char from client is \r\n\r\n
                 if (not chr):  # client sent empty message
-                    status = "close"
+                    status = 404
                 else:
                     data = data + chr
                     if (len(data) >= 4 and data[-4:] == '\r\n\r\n'):
                         print(data)
                         status = proccess_client_request(conn, data)
                         data = ""
-                        if (status == "close"):
-                            flag = 1
+                if (status == 404):  # we close the socket after the client sent empty message or wanted to close
+                    conn.close()
+            # if (status == 404):  # we close the socket after the client sent empty message or wanted to close
+            #     conn.close()
 
-            if (status == "close"):  # we close the socket after the client sent empty message or wanted to close
-                conn.close()
-                flag = 0
         except socket.timeout:
             if (conn.fileno() != -1):
                 conn.close()
