@@ -25,7 +25,7 @@ def proccess_client_request(conn,
         if i == '':  # empty message from client, need to close and get another client
             status = 404
         if i == '/redirect':
-            status = 404
+            status = redirection(conn)
         else:
             status = check_if_file_exist(conn, i, dictt.get(i))
     return status
@@ -42,7 +42,7 @@ def check_if_file_exist(conn, path, connection_status):
     path = files + path
     if (os.path.isfile(path) is False):  # send FileNotFound
         conn.send((HTTP_NOT_FOUND_STR + CONNECTION_CLOSE_STR + SUFFIX).encode())
-        return 404
+        return 404 #close socket
 
     else:
         length = os.path.getsize(path)  # get size of the data in file
@@ -50,16 +50,16 @@ def check_if_file_exist(conn, path, connection_status):
                    str(length) + SUFFIX).encode())
         read_send_bytes(conn, path)
         if (connection_status == "close"):
-            return 404
+            return 404 #close socket
         else:
-            return 200
+            return 200 #keep socket alive
 
 
 def redirection(conn):
     conn.send((HTTP_MOVED_STR + CONNECTION_CLOSE_STR + '\r\n' + LOCATION_RESULT_STR + SUFFIX).encode())
     path = "files/result.html"
     read_send_bytes(conn, path)
-    return 404
+    return 404 #close socket
 
 
 def parse_information(req):
@@ -91,7 +91,7 @@ def main():
     myport = sys.argv[1]  # this variable will hold the port that the server will listen to
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(('', int(myport)))
-    s.listen(5)
+    s.listen(1)
     chr = 'a'
     status = "open"  # by default we stay in keep-alive mode so we dont close the socket
 
